@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Group Chat Teman - Pedamaran</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+body{font-family:sans-serif;margin:0;display:flex;flex-direction:column;height:100vh}
+.login{margin:auto;padding:24px;border:1px solid #ddd;border-radius:16px;width:90%;max-width:340px;box-shadow:0 4px 12px rgba(0,0,0,0.05)}
+input,button{width:100%;padding:13px;margin:7px 0;border-radius:10px;border:1px solid #ccc;box-sizing:border-box;font-size:16px}
+button{background:#0084ff;color:#fff;border:none;font-weight:bold;cursor:pointer}
+#chat{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f2f2f2}
+.b{padding:10px 14px;border-radius:18px;max-width:75%;word-break:break-word;font-size:15px}
+.me{background:#0084ff;color:#fff;align-self:flex-end}
+.you{background:#fff;align-self:flex-start;border:1px solid #e5e5e5}
+.bottom{display:flex;padding:10px;gap:8px;background:#fff;border-top:1px solid #ddd}
+.bottom input{flex:1}
+</style>
+</head>
+<body>
+
+<div id="loginBox" class="login">
+<h3 style="margin-top:0">Masuk Chat Pedamaran</h3>
+<input id="nama" placeholder="Nama kamu (contoh: Budi)">
+<input id="room" placeholder="Nama Room" value="pedamaran">
+<button onclick="masuk()">Masuk Group</button>
+</div>
+
+<div id="chatBox" style="display:none;flex-direction:column;height:100vh">
+<div style="background:#0084ff;color:#fff;padding:12px 16px">Room: <b id="roomName"></b> | Kamu: <b id="userName"></b></div>
+<div id="chat"></div>
+<div class="bottom"><input id="msg" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter')kirim()"><button onclick="kirim()" style="width:85px">Kirim</button></div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDiftsFvfGpssXntW52TgNmNxNsejeD-H0",
+  authDomain: "live-chat-6adec.firebaseapp.com",
+  projectId: "live-chat-6adec",
+  storageBucket: "live-chat-6adec.firebasestorage.app",
+  messagingSenderId: "255594622504",
+  appId: "1:255594622504:web:8bbb9447597e34434b0f1d"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+let nama, room, myId = 'user_'+Math.random().toString(36).slice(2);
+
+function masuk(){
+  nama = document.getElementById('nama').value.trim();
+  room = document.getElementById('room').value.trim().toLowerCase();
+  if(!nama||!room) return alert('Isi nama & room dulu');
+  document.getElementById('loginBox').style.display='none';
+  document.getElementById('chatBox').style.display='flex';
+  document.getElementById('roomName').innerText=room;
+  document.getElementById('userName').innerText=nama;
+  listen();
+}
+function listen(){
+  db.collection('rooms').doc(room).collection('messages').orderBy('time').onSnapshot(snap=>{
+    const chat=document.getElementById('chat'); chat.innerHTML='';
+    snap.forEach(doc=>{
+      const d=doc.data(); 
+      const div=document.createElement('div');
+      div.className='b '+(d.senderId===myId?'me':'you');
+      div.innerText=d.nama+': '+(d.text||'');
+      chat.appendChild(div);
+    });
+    chat.scrollTop=chat.scrollHeight;
+  });
+}
+function kirim(){
+  const t=document.getElementById('msg').value.trim(); 
+  if(!t) return;
+  db.collection('rooms').doc(room).collection('messages').add({nama:nama,senderId:myId,text:t,time:Date.now()});
+  document.getElementById('msg').value='';
+}
+</script>
+</body>
+</html>
